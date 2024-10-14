@@ -8,6 +8,7 @@ import (
 	"github.com/go-git/go-git/v5/storage/filesystem"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type Project struct {
@@ -55,7 +56,29 @@ func (p *Project) ParseCommits() error {
 	}
 
 	// ... retrieve the commit history
-	cIter, err := r.Log(&git.LogOptions{From: ref.Hash()})
+	// 考虑增加一个环境变量支持since参数 以减少耗时 但是如果没有该环境变量需要忽略改参数
+	sinceStr := os.Getenv("GIT_SINCE")
+	var options *git.LogOptions
+	if sinceStr != "" {
+		layout := "2006-01-02"
+		sinceTime, err := time.Parse(layout, sinceStr)
+		if err != nil {
+			return err
+		}
+
+		// 使用 since 参数
+		options = &git.LogOptions{
+			From:  ref.Hash(),
+			Since: &sinceTime,
+		}
+	} else {
+		// 如果环境变量不存在，则不使用 since 参数
+		options = &git.LogOptions{
+			From: ref.Hash(),
+		}
+	}
+
+	cIter, err := r.Log(options)
 	if err != nil {
 		return err
 	}

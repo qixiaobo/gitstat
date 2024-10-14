@@ -29,7 +29,9 @@ func (c Commits) ParseFileChanges() error {
 			}
 
 			parentCommit := c.Find(firstParent.Hash.String())
-
+			if parentCommit == nil {
+				continue
+			}
 			toTree, err = parentCommit.originalCommit.Tree()
 			if err != nil {
 				return err
